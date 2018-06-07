@@ -1,0 +1,6 @@
+Os arquivos .cir são esquemáticos para o editor EDFIL.
+O programa MNAE lê arquivos .net que o editor gera.
+A versão mna22 implementa o método Teta de integração com análise nodal modificada normal.
+A versão mais atual, 2.3, implementa a análise nodal compactada, afetando a fonte de tensão, as fontes controladas E, F e H e o amp. operacional. 
+Os demais elementos continuam tratados pela análise nodal modificada normal.
+Exemplos para o método Teta e análise compactada estão no diretório teta.
