@@ -39,11 +39,13 @@ de forma a que o numero de equacoes nunca excede o numero de nos.
 
 #define MAX_LINHA             80
 #define MAX_NOME              11
-#define MAX_ELEMENTOSENTOS    50
+#define MAX_ELEMENTOS         50
 #define MAX_NOS               50
 #define TOLG                  1e-9
 #define DEBUG
 
+/* Nessa estrutura, os valores inteiros
+correspondem aos terminais do elemento */
 typedef struct elemento { /* Elemento do netlist */
   char nome[MAX_NOME];
   double valor;
@@ -66,14 +68,14 @@ tabela coluna, linha;
 char
 /* Foram colocados limites nos formatos de leitura para alguma protecao
    contra excesso de caracteres nestas variaveis */
-  nomearquivo[MAX_LINHA + 1],
-  tipo,
+  nomeArquivo[MAX_LINHA + 1],
+  tipo, /* Corresponde a letra inicial do elemento R -> Resistor*/
   na[MAX_NOME],nb[MAX_NOME],nc[MAX_NOME],nd[MAX_NOME],
   lista[MAX_NOS + 1][MAX_NOME + 2], /*Tem que caber jx antes do nome */
   linhaArquivo[MAX_LINHA + 1],
   *p;
 
-FILE *arquivo;
+  FILE *arquivo;
 
 double
   g,
@@ -138,7 +140,7 @@ int numero(char *nome)
   achou = 0;
 
   while (!achou && i <= numeroVariaveis)
-    if (!(achou =! strcmp(nome,lista[i])))
+    if (!(achou = !strcmp(nome,lista[i])))
       i++;
 
   if (!achou)
@@ -244,12 +246,12 @@ int main(void)
   strcpy(lista[0], "0");
 
   printf("Nome do arquivo com o netlist (ex: mna.net): ");
-  scanf("%50s", nomearquivo);
+  scanf("%50s", nomeArquivo);
 
-  arquivo = fopen(nomearquivo, "r");
+  arquivo = fopen(nomeArquivo, "r");
 
   if (arquivo == 0) {
-    printf("Arquivo %s inexistente\n", nomearquivo);
+    printf("Arquivo %s inexistente\n", nomeArquivo);
     goto denovo;
   }
 
