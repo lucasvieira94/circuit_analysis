@@ -71,7 +71,8 @@ char
   nomeArquivo[MAX_LINHA + 1],
   tipo, /* Corresponde a letra inicial do elemento R -> Resistor*/
   na[MAX_NOME],nb[MAX_NOME],nc[MAX_NOME],nd[MAX_NOME],
-  lista[MAX_NOS + 1][MAX_NOME + 2], /*Tem que caber jx antes do nome */
+  /* A lista contém as variaveis (ou nós) do sistema */
+  listaVariaveis[MAX_NOS + 1][MAX_NOME + 2], /*Tem que caber jx antes do nome */
   linhaArquivo[MAX_LINHA + 1],
   *p;
 
@@ -140,7 +141,7 @@ int numero(char *nome)
   achou = 0;
 
   while (!achou && i <= numeroVariaveis)
-    if (!(achou = !strcmp(nome,lista[i])))
+    if (!(achou = !strcmp(nome,listaVariaveis[i])))
       i++;
 
   if (!achou)
@@ -152,7 +153,7 @@ int numero(char *nome)
     }
 
     numeroVariaveis++;
-    strcpy(lista[numeroVariaveis], nome);
+    strcpy(listaVariaveis[numeroVariaveis], nome);
     return numeroVariaveis; /* novo no */
   }
   else
@@ -236,14 +237,13 @@ int main(void)
     linha[i] = i;
   } /* Inicializa tabelas */
 
+  /*  Recebe o nome do arquivo pela linha de comando */
   denovo:
-
-  /* Leitura do netlist */
 
   numeroElementos = 0;
   numeroVariaveis = 0;
 
-  strcpy(lista[0], "0");
+  strcpy(listaVariaveis[0], "0");
 
   printf("Nome do arquivo com o netlist (ex: mna.net): ");
   scanf("%50s", nomeArquivo);
@@ -271,24 +271,36 @@ int main(void)
       exit(1);
     }
 
+    /* Pega o tipo do elemento, primeiro caracter da linha ex: R0102 1 2 1 - pega o R */
     linhaArquivo[0] = toupper(linhaArquivo[0]);
     tipo = linhaArquivo[0];
 
+    /* Grava os 10 caracteres da primeira string da linha na variavel netlist.nome, ex: R0102 */
     sscanf(linhaArquivo, "%10s", netlist[numeroElementos].nome);
+    /* Aponta para o espaço de memoria após R0102 para captar os paramentros */
     p = linhaArquivo + strlen(netlist[numeroElementos].nome); /* Inicio dos parametros */
 
     /* O que é lido depende do tipo */
     if ( (tipo == 'R') || (tipo == 'I') || (tipo == 'V') )
     {
+      /* Essa formatação é devido a natureza desses Elementos
+         o dois primeiros paramentros sao os terminais e o
+         ultimo é o valor, esses valores sao salvos na variaveis abaixo */
       sscanf(p, "%10s%10s%lg", na, nb, &netlist[numeroElementos].valor);
       printf("%s %s %s %g\n", netlist[numeroElementos].nome,
                               na, nb,
                               netlist[numeroElementos].valor);
+
+      /* insere os nós na lista e retorna o numero correspondente
+         desse nó para a variavel de elemento netlist.a. Caso o nó ja exista
+         retorna apenas o numero correspondente ao nó */
       netlist[numeroElementos].a = numero(na);
       netlist[numeroElementos].b = numero(nb);
     }
     else if ( (tipo =='G') || (tipo == 'E') || (tipo =='F') || (tipo == 'H') )
     {
+      /* O processo desse cenário funciona exatamente igual ao caso anterior,
+         contudo esses elementos possuem 5 parametros, ja que posseum 4 terminais */
       sscanf(p, "%10s%10s%10s%10s%lg", na, nb, nc, nd, &netlist[numeroElementos].valor);
       printf("%s %s %s %s %s %g\n", netlist[numeroElementos].nome,
                                     na, nb, nc, nd,
@@ -311,7 +323,8 @@ int main(void)
     {
       /* Comentario comeca com "*" */
       printf("Comentario: %s", linhaArquivo);
-      numeroElementos;
+      /* Decrementa o numero de elementos por se tratar de um comentario */
+      numeroElementos--;
     }
     else
     {
@@ -331,6 +344,12 @@ int main(void)
   numeroNos = numeroVariaveis;
   numeroEquacoes = numeroNos;
 
+  /* A partir desse momento temos todas as variaveis do arquivo netlist mapeadas no
+     vetor da estrutura de elementos netlist */
+
+  /* Aqui é feita uma iteração por cada um dos elementos do netlist e,
+     no elemento em questão, é aplicada a função 'operacional()' para
+     modelar o elemento usando amplificadores operacionais */
   for (i = 1; i <= numeroElementos; i++)
   {
     tipo = netlist[i].nome[0];
@@ -338,8 +357,10 @@ int main(void)
     {
       numeroVariaveis++;
       testarnos();
-      strcpy(lista[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
-      strcat(lista[numeroVariaveis], netlist[i].nome);
+      /* Adiciona mais uma variável na lista correspondendo a Corrente
+         na fonte de tensao em questão */
+      strcpy(listaVariaveis[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
+      strcat(listaVariaveis[numeroVariaveis], netlist[i].nome);
       netlist[i].x = numeroVariaveis;
       operacional(netlist[i].a, netlist[i].b, 0, netlist[i].x);
     }
@@ -352,8 +373,8 @@ int main(void)
     {
       numeroVariaveis++;
       testarnos();
-      strcpy(lista[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
-      strcat(lista[numeroVariaveis], netlist[i].nome);
+      strcpy(listaVariaveis[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
+      strcat(listaVariaveis[numeroVariaveis], netlist[i].nome);
       netlist[i].x = numeroVariaveis;
       operacional(netlist[i].a, netlist[i].b, 0, netlist[i].x);
     }
@@ -361,8 +382,8 @@ int main(void)
     {
       numeroVariaveis++;
       testarnos();
-      strcpy(lista[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
-      strcat(lista[numeroVariaveis], netlist[i].nome);
+      strcpy(listaVariaveis[numeroVariaveis], "j"); /* Tem espaco para mais dois caracteres */
+      strcat(listaVariaveis[numeroVariaveis], netlist[i].nome);
       netlist[i].x = numeroVariaveis;
       operacional(netlist[i].x, 0, netlist[i].c, netlist[i].d);
     }
@@ -370,11 +391,11 @@ int main(void)
     {
       numeroVariaveis = numeroVariaveis + 2;
       testarnos();
-      strcpy(lista[numeroVariaveis - 1], "jx");
-      strcat(lista[numeroVariaveis - 1], netlist[i].nome);
+      strcpy(listaVariaveis[numeroVariaveis - 1], "jx");
+      strcat(listaVariaveis[numeroVariaveis - 1], netlist[i].nome);
       netlist[i].x = numeroVariaveis - 1;
-      strcpy(lista[numeroVariaveis], "jy");
-      strcat(lista[numeroVariaveis], netlist[i].nome);
+      strcpy(listaVariaveis[numeroVariaveis], "jy");
+      strcat(listaVariaveis[numeroVariaveis], netlist[i].nome);
       netlist[i].y = numeroVariaveis;
       operacional(netlist[i].a, netlist[i].b, 0, netlist[i].y);
       operacional(netlist[i].x, 0, netlist[i].c, netlist[i].d);
@@ -383,13 +404,14 @@ int main(void)
 
   getch();
 
-  /* Lista tudo */
+  /* Lista as variáveis e seus respectivos valores */
   printf("Variaveis internas: \n");
   for (i = 0; i <= numeroVariaveis; i++)
-    printf("%d -> %s (%d)\n", i, lista[i], coluna[i]);
+    printf("%d -> %s (%d)\n", i, listaVariaveis[i], coluna[i]);
 
   getch();
 
+  /* Faz a listagem do netlist formatando de acordo com o elemento em questão */
   printf("Netlist interno final\n");
   for (i = 1; i <= numeroElementos; i++)
   {
@@ -420,7 +442,10 @@ int main(void)
     for (j = 0; j <= numeroEquacoes + 1; j++)
       Yn[i][j] = 0;
 
-  /* Monta estampas */
+  /* Monta as estampas da modelagem dos amplificadores operacionais.
+     O FOR anterior modela os elementos em aplicficadores operacionais e este
+     modela essa modelagem anterior usando a estampa de amplificador operacional com
+     fontes de corrente, resistores e transresistores */
   for (i = 1; i <= numeroElementos; i++)
   {
     tipo = netlist[i].nome[0];
@@ -502,9 +527,9 @@ int main(void)
       strcpy(linhaArquivo, "Corrente");
 
     if (coluna[i] != 0)
-      printf("%s %s (%d): %g\n", linhaArquivo, lista[i], coluna[i], Yn[coluna[i]][numeroEquacoes + 1]);
+      printf("%s %s (%d): %g\n", linhaArquivo, listaVariaveis[i], coluna[i], Yn[coluna[i]][numeroEquacoes + 1]);
     else
-      printf("%s %s (%d): nao calculada\n", linhaArquivo, lista[i], coluna[i]);
+      printf("%s %s (%d): nao calculada\n", linhaArquivo, listaVariaveis[i], coluna[i]);
   }
   getch();
   return 0;
